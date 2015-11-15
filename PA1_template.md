@@ -1,7 +1,7 @@
 ---
 title: "Reproducible Research: Peer Assessment 1"
 author: Cliff Cunnington
-date: "`r format(Sys.time(), '%d %B, %Y')`"
+date: "15 November, 2015"
 output:
   html_document:
     toc: true
@@ -14,7 +14,8 @@ output:
 
 ## Notes
 
-```{r echo=T}
+
+```r
 ## Package dependencies
 # install.packages(c('stringr', 'dplyr', 'ggplot2', 'scales', 'knitr', 'chron'))
 
@@ -46,7 +47,8 @@ Source: [rdpeng/RepData_PeerAssessment1/../README.md](https://github.com/rdpeng/
 
 Original data source: [rdpeng/RepData_PeerAssessment1](https://github.com/rdpeng/RepData_PeerAssessment1/)
 
-```{r echo=T}
+
+```r
 # Data was imported by cloning rdpeng's github repo for the assignment, and unzipping the
 # activity.zip data file.
 if (! file.exists('activity.csv')) {
@@ -61,17 +63,44 @@ data <- read.csv('activity.csv')
 
 **A look at the existing data variables:**
 
-```{r echo=T}
-str(data)
-head(data, n = 3); tail(data, n = 3)
 
+```r
+str(data)
+```
+
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : Factor w/ 61 levels "2012-10-01","2012-10-02",..: 1 1 1 1 1 1 1 1 1 1 ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
+```
+
+```r
+head(data, n = 3); tail(data, n = 3)
+```
+
+```
+##   steps       date interval
+## 1    NA 2012-10-01        0
+## 2    NA 2012-10-01        5
+## 3    NA 2012-10-01       10
+```
+
+```
+##       steps       date interval
+## 17566    NA 2012-11-30     2345
+## 17567    NA 2012-11-30     2350
+## 17568    NA 2012-11-30     2355
+```
+
+```r
 # Count NAs in data$steps for dynamic use in text.
 missing_steps <- sum(is.na(data$steps))
 ```
 
 Of the given variables:
 
-- **steps**: is correctly formatted as int-type, so no processing required here. Be aware that there are **`r missing_steps`** missing data points (NAs) that will be dealt with later in the processing.
+- **steps**: is correctly formatted as int-type, so no processing required here. Be aware that there are **2304** missing data points (NAs) that will be dealt with later in the processing.
 - **date**: the dates were automatically imported as factors, so need to be converted to a time format for correct parsing.
 - **interval**: although described as identifiers in the assignment, these are in fact poorly-formatted 5-minute time of day intervals in 24-hour format. (E.g. 0 refers to midnight, or 00:00 hours; 105 is 01:05 hours, etc.). To process these, first pad the strings to four digits and then reformatted to the form **hh:mm**. Although stored as strings, these can be later converted to time objects.
 
@@ -83,7 +112,8 @@ Additional variables to create:
 
 Create variable interval_time (hh:mm) from interval variable:
 
-```{r echo=T}
+
+```r
 # 'stringr' for str_pad() and 'dplyr' for chaining, and other functions later on.
 library('stringr')
 library('dplyr')
@@ -101,16 +131,22 @@ data$datetime_interval <- as.POSIXct( paste(data$date, data$interval_time), tz='
 
 The mean is calculated from the sum of steps (ex. NAs) divided by the number of days in the dataset whether a day includes any values or not -- i.e. 61 days.
 
-```{r echo=T}
+
+```r
 # Use n_distinct(dplyr) to count number of days
 sum(data$steps, na.rm=T) / n_distinct(data$date)
+```
+
+```
+## [1] 9354.23
 ```
 
 ## Histogram of total number of steps taken each day
 
 See [here](http://mathcentral.uregina.ca/QQ/database/QQ.09.99/raeluck1.html) for an explanation of the difference between a bar plot and a histogram.
 
-```{r echo=T }
+
+```r
 # Select date and step variables, group by dates and sum the steps for each date
 steps_by_day <- select(data, date, steps) %>% 
   group_by(date) %>%
@@ -125,20 +161,32 @@ p <- p + ylab('Steps per day') + xlab('Date')
 p
 ```
 
+![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6-1.png) 
+
 ## Calculate / report the mean and median total number of steps taken per day
 
 _Note: These averages likely do not accurately reflect the real averages as 8 days consist entirely of missing data._
 
 Mean:
-```{r echo=T }
+
+```r
 # mean by day
 round(mean(steps_by_day$steps, na.rm=T))
 ```
 
+```
+## [1] 10766
+```
+
 Median:
-```{r echo=T}
+
+```r
 # median by day
 median(steps_by_day$steps, na.rm=T)
+```
+
+```
+## [1] 10765
 ```
 
 # What is the average daily activity pattern?
@@ -147,7 +195,8 @@ median(steps_by_day$steps, na.rm=T)
 
 *... of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis).*
 
-```{r echo=T}
+
+```r
 # Group and sum steps taken, dividing by number of days (61) - round the result
 avg_steps_by_interval <- select(data, time=interval_time, steps) %>% 
   group_by(time) %>%
@@ -164,18 +213,23 @@ p <- ggplot(avg_steps_by_interval, aes(hms, steps)) + geom_line()
 p <- p + scale_x_datetime(labels = date_format("%H:%M"))
 p <- p + xlab("5-minute intervals") + ylab("Steps (Averaged per day)")
 p
-
 ```
+
+![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9-1.png) 
 
 ## Which 5-minute interval contains the maximum number of steps?
 
 _... as averaged across all the days in the dataset._
 
-```{r echo=T}
+
+```r
 avg_steps_by_interval$time[
   which.max(avg_steps_by_interval$steps)
   ]
+```
 
+```
+## [1] "08:35"
 ```
 
 
@@ -185,9 +239,17 @@ avg_steps_by_interval$time[
 
 _i.e. the total number of rows with NAs_
 
-```{r echo=T}
+
+```r
 # Missing data for all variables (columns)
 colSums(is.na(data))
+```
+
+```
+##             steps              date          interval     interval_time 
+##              2304                 0                 0                 0 
+## datetime_interval 
+##                 0
 ```
 
 ## Fill in all of the missing values in the dataset
@@ -197,7 +259,8 @@ _The strategy for filling missing values does not need to be sophisticated. For 
 For some of the days, data is missing for all intervals -- so the most sensible strategy would be to fill NAs with the mean for the corresponding 5-minute interval across all days.
 
 
-```{r echo=T}
+
+```r
 # Create a new dataset that is equal to the original dataset but with the
 # missing data filled in.
 
@@ -216,13 +279,12 @@ for (i in which(dataNA)) {
 
 # Convert data2$steps to numeric (above converts it to character class)
 data2$steps <- as.numeric(data2$steps)
-
 ```
 
 ## Make a histogram of the total number of steps taken each day
 
-```{r echo=T}
 
+```r
 # Select date and step variables, group by dates and sum the steps for each date
 steps_by_day2 <- select(data2, date, steps) %>% 
   group_by(date) %>%
@@ -235,22 +297,32 @@ p <- p + geom_histogram(aes(weight = steps))
 p <- p + theme(axis.text.x = element_text( angle = 90, size = rel(0.7) ))
 p <- p + ylab('Steps per day (revised)') + xlab('Date')
 p
-
-
 ```
+
+![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-13-1.png) 
 
 ### Calculate and report the mean and median total number of steps taken per day.
 
 Mean:
-```{r echo=T }
+
+```r
 # mean by day
 round(mean(steps_by_day2$steps, na.rm=T))
 ```
 
+```
+## [1] 10581
+```
+
 Median:
-```{r echo=T}
+
+```r
 # median by day
 median(steps_by_day2$steps, na.rm=T)
+```
+
+```
+## [1] 10395
 ```
 
 ### Do these values differ from the estimates from the first part of the assignment?
@@ -264,10 +336,18 @@ Having used an average of those days with interval values to impute missing data
 
 As expected, the total number of steps increases when the imputed values are included.
 
-```{r echo=T}
+
+```r
 # Sum of steps for original data vs modified data
 sum(data$steps, na.rm=T); sum(data2$steps, na.rm=T)
+```
 
+```
+## [1] 570608
+```
+
+```
+## [1] 645424
 ```
 
 
@@ -279,7 +359,8 @@ sum(data$steps, na.rm=T); sum(data2$steps, na.rm=T)
 
 ... with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
 
-```{r echo=T}
+
+```r
 # Use is.weekend(chron) for logical(); convert to factor; change T/F to weekend/weekday
 library(chron)
 data2$day_kind <- as.factor(is.weekend(data2$date))
@@ -287,11 +368,16 @@ levels(data2$day_kind) <- list(weekend = 'TRUE', weekday = 'FALSE')
 str(data2$day_kind)
 ```
 
+```
+##  Factor w/ 2 levels "weekend","weekday": 2 2 2 2 2 2 2 2 2 2 ...
+```
+
 ## Make a panel plot containing a time series plot ...
 
 ... (i.e. type = "l") of the  5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
 
-```{r echo=T}
+
+```r
 # Count number of weekdays and number of weekend days -- used below to calculate day average
 n_weekdays = n_distinct(data2$date[data2$day_kind == 'weekday'])
 n_weekends = n_distinct(data2$date[data2$day_kind == 'weekend'])
@@ -321,8 +407,9 @@ p <- p + scale_x_datetime(labels = date_format("%H:%M"))
 p <- p + xlab("Minute interval") + ylab("Steps per interval, averaged over all days")
 p <- p + facet_grid(. ~ day_kind)
 p
-
 ```
+
+![plot of chunk unnamed-chunk-18](figure/unnamed-chunk-18-1.png) 
 
 
 For weekdays the activity peaks correspond strongly to working day patterns (morning and evening commutes, and lunchtime). Weekend's activity peaks are spread more evenly across the day, but begin and end later.
